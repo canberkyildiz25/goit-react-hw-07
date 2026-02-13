@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 const emptyContact = {
   name: '',
@@ -7,14 +7,8 @@ const emptyContact = {
   avatar: '',
 }
 
-function ContactForm({ initialContact, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState(
-    initialContact ? { ...emptyContact, ...initialContact } : emptyContact
-  )
-
-  useEffect(() => {
-    setFormData(initialContact ? { ...emptyContact, ...initialContact } : emptyContact)
-  }, [initialContact])
+function ContactForm({ onSubmit }) {
+  const [formData, setFormData] = useState(emptyContact)
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -33,9 +27,7 @@ function ContactForm({ initialContact, onSubmit, onCancel }) {
       return
     }
     onSubmit(payload)
-    if (!initialContact) {
-      setFormData(emptyContact)
-    }
+    setFormData(emptyContact)
   }
 
   return (
@@ -43,13 +35,8 @@ function ContactForm({ initialContact, onSubmit, onCancel }) {
       <div className="form-header">
         <div>
           <p className="form-eyebrow">Contact greenhouse</p>
-          <h2>{initialContact ? 'Edit contact' : 'Add new contact'}</h2>
+          <h2>Add new contact</h2>
         </div>
-        {initialContact && (
-          <button type="button" className="ghost-button" onClick={onCancel}>
-            Cancel
-          </button>
-        )}
       </div>
       <div className="form-grid">
         <label>
@@ -96,7 +83,7 @@ function ContactForm({ initialContact, onSubmit, onCancel }) {
         </label>
       </div>
       <button type="submit" className="primary-button">
-        {initialContact ? 'Save changes' : 'Add contact'}
+        Add contact
       </button>
     </form>
   )

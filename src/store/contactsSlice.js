@@ -46,7 +46,7 @@ const contactsSlice = createSlice({
       .addCase(updateContact.fulfilled, (state, action) => {
         state.status = 'succeeded'
         const index = state.items.findIndex(
-          (contact) => contact.id === action.payload.id
+          (contact) => contact.id === action.meta.arg.id
         )
         if (index !== -1) {
           state.items[index] = action.payload

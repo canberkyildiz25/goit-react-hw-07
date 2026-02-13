@@ -3,22 +3,20 @@ import { useDispatch, useSelector } from 'react-redux'
 import './App.css'
 import ContactForm from './components/ContactForm'
 import ContactList from './components/ContactList'
+import EditModal from './components/EditModal'
 import FilterBar from './components/FilterBar'
 import SearchBar from './components/SearchBar'
 import {
   addContact,
   fetchContacts,
-  updateContact,
 } from './redux/contactsOps'
 import { selectFilteredContacts } from './store/contactsSlice'
-import { clearEditingContact } from './store/uiSlice'
 import { setFilter, setSearch } from './store/filtersSlice'
 
 function App() {
   const dispatch = useDispatch()
   const { items, status, error } = useSelector((state) => state.contacts)
   const { search, filter } = useSelector((state) => state.filters)
-  const editingContact = useSelector((state) => state.ui.editingContact)
 
   useEffect(() => {
     if (status === 'idle') {
@@ -28,12 +26,7 @@ function App() {
 
   const filteredContacts = useSelector(selectFilteredContacts)
 
-  const handleSubmit = async (payload) => {
-    if (editingContact) {
-      await dispatch(updateContact({ id: editingContact.id, updates: payload }))
-      dispatch(clearEditingContact())
-      return
-    }
+  const handleSubmit = (payload) => {
     dispatch(addContact(payload))
   }
 
@@ -62,11 +55,7 @@ function App() {
           </div>
         </div>
         <div className="hero-card">
-          <ContactForm
-            initialContact={editingContact}
-            onSubmit={handleSubmit}
-            onCancel={() => dispatch(clearEditingContact())}
-          />
+          <ContactForm onSubmit={handleSubmit} />
         </div>
       </header>
 
@@ -93,6 +82,7 @@ function App() {
           <ContactList />
         </section>
       </main>
+      <EditModal />
     </div>
   )
 }
