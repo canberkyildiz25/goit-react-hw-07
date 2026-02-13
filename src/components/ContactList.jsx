@@ -1,3 +1,8 @@
+import { useDispatch, useSelector } from 'react-redux'
+import { selectFilteredContacts } from '../store/contactsSlice'
+import { deleteContact } from '../redux/contactsOps'
+import { setEditingContact } from '../store/uiSlice'
+
 const getInitials = (name) => {
   if (!name) {
     return '??'
@@ -8,7 +13,9 @@ const getInitials = (name) => {
   return `${first}${second}`.toUpperCase()
 }
 
-function ContactList({ contacts, onEdit, onDelete }) {
+function ContactList() {
+  const dispatch = useDispatch()
+  const contacts = useSelector(selectFilteredContacts)
   if (contacts.length === 0) {
     return <p className="empty-state">No contacts yet. Add someone above.</p>
   }
@@ -30,10 +37,18 @@ function ContactList({ contacts, onEdit, onDelete }) {
             {contact.email && <p>{contact.email}</p>}
           </div>
           <div className="contact-actions">
-            <button type="button" className="ghost-button" onClick={() => onEdit(contact)}>
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => dispatch(setEditingContact(contact))}
+            >
               Edit
             </button>
-            <button type="button" className="danger-button" onClick={() => onDelete(contact.id)}>
+            <button
+              type="button"
+              className="danger-button"
+              onClick={() => dispatch(deleteContact(contact.id))}
+            >
               Delete
             </button>
           </div>

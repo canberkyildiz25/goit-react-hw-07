@@ -1,41 +1,10 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import axios from 'axios'
-
-const api = axios.create({
-  baseURL: 'https://698d85bbb79d1c928ed59d0f.mockapi.io/contacts',
-})
-
-export const fetchContacts = createAsyncThunk(
-  'contacts/fetchAll',
-  async () => {
-    const response = await api.get('/')
-    return response.data
-  }
-)
-
-export const addContact = createAsyncThunk(
-  'contacts/add',
-  async (contact) => {
-    const response = await api.post('/', contact)
-    return response.data
-  }
-)
-
-export const updateContact = createAsyncThunk(
-  'contacts/update',
-  async ({ id, updates }) => {
-    const response = await api.put(`/${id}`, updates)
-    return response.data
-  }
-)
-
-export const deleteContact = createAsyncThunk(
-  'contacts/delete',
-  async (id) => {
-    await api.delete(`/${id}`)
-    return id
-  }
-)
+import { createSelector, createSlice } from '@reduxjs/toolkit'
+import {
+  addContact,
+  deleteContact,
+  fetchContacts,
+  updateContact,
+} from '../redux/contactsOps'
 
 const contactsSlice = createSlice({
   name: 'contacts',
@@ -44,7 +13,6 @@ const contactsSlice = createSlice({
     status: 'idle',
     error: null,
   },
-  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(fetchContacts.pending, (state) => {
@@ -57,12 +25,26 @@ const contactsSlice = createSlice({
       })
       .addCase(fetchContacts.rejected, (state, action) => {
         state.status = 'failed'
-        state.error = action.error.message || 'Failed to fetch contacts'
+        state.error = action.payload || action.error.message
+      })
+      .addCase(addContact.pending, (state) => {
+        state.status = 'loading'
+        state.error = null
       })
       .addCase(addContact.fulfilled, (state, action) => {
+        state.status = 'succeeded'
         state.items.unshift(action.payload)
       })
+      .addCase(addContact.rejected, (state, action) => {
+        state.status = 'failed'
+        state.error = action.payload || action.error.message
+      })
+      .addCase(updateContact.pending, (state) => {
+        state.status = 'loading'
+        state.error = null
+      })
       .addCase(updateContact.fulfilled, (state, action) => {
+        state.status = 'succeeded'
         const index = state.items.findIndex(
           (contact) => contact.id === action.payload.id
         )
@@ -70,12 +52,50 @@ const contactsSlice = createSlice({
           state.items[index] = action.payload
         }
       })
+      .addCase(updateContact.rejected, (state, action) => {
+        state.status = 'failed'
+        state.error = action.payload || action.error.message
+      })
+      .addCase(deleteContact.pending, (state) => {
+        state.status = 'loading'
+        state.error = null
+      })
       .addCase(deleteContact.fulfilled, (state, action) => {
+        state.status = 'succeeded'
         state.items = state.items.filter(
           (contact) => contact.id !== action.payload
         )
+      })
+      .addCase(deleteContact.rejected, (state, action) => {
+        state.status = 'failed'
+        state.error = action.payload || action.error.message
       })
   },
 })
 
 export default contactsSlice.reducer
+
+const selectContactsItems = (state) => state.contacts.items
+const selectSearchValue = (state) => state.filters.search
+const selectFilterValue = (state) => state.filters.filter
+
+export const selectFilteredContacts = createSelector(
+  [selectContactsItems, selectSearchValue, selectFilterValue],
+  (items, search, filter) => {
+    const normalizedSearch = search.trim().toLowerCase()
+    return items.filter((contact) => {
+      const matchesSearch = normalizedSearch
+        ? `${contact.name} ${contact.phone} ${contact.email || ''}`
+            .toLowerCase()
+            .includes(normalizedSearch)
+        : true
+
+      const matchesFilter =
+        filter === 'all' ||
+        (filter === 'hasEmail' && contact.email) ||
+        (filter === 'hasPhone' && contact.phone)
+
+      return matchesSearch && matchesFilter
+    })
+  }
+)

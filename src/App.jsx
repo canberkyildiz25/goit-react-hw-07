@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import './App.css'
 import ContactForm from './components/ContactForm'
@@ -7,17 +7,18 @@ import FilterBar from './components/FilterBar'
 import SearchBar from './components/SearchBar'
 import {
   addContact,
-  deleteContact,
   fetchContacts,
   updateContact,
-} from './store/contactsSlice'
+} from './redux/contactsOps'
+import { selectFilteredContacts } from './store/contactsSlice'
+import { clearEditingContact } from './store/uiSlice'
 import { setFilter, setSearch } from './store/filtersSlice'
 
 function App() {
   const dispatch = useDispatch()
   const { items, status, error } = useSelector((state) => state.contacts)
   const { search, filter } = useSelector((state) => state.filters)
-  const [editingContact, setEditingContact] = useState(null)
+  const editingContact = useSelector((state) => state.ui.editingContact)
 
   useEffect(() => {
     if (status === 'idle') {
@@ -25,39 +26,15 @@ function App() {
     }
   }, [dispatch, status])
 
-  const filteredContacts = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase()
-    return items.filter((contact) => {
-      const matchesSearch = normalizedSearch
-        ? `${contact.name} ${contact.phone} ${contact.email || ''}`
-            .toLowerCase()
-            .includes(normalizedSearch)
-        : true
-
-      const matchesFilter =
-        filter === 'all' ||
-        (filter === 'hasEmail' && contact.email) ||
-        (filter === 'hasPhone' && contact.phone)
-
-      return matchesSearch && matchesFilter
-    })
-  }, [items, search, filter])
+  const filteredContacts = useSelector(selectFilteredContacts)
 
   const handleSubmit = async (payload) => {
     if (editingContact) {
       await dispatch(updateContact({ id: editingContact.id, updates: payload }))
-      setEditingContact(null)
+      dispatch(clearEditingContact())
       return
     }
     dispatch(addContact(payload))
-  }
-
-  const handleEdit = (contact) => {
-    setEditingContact(contact)
-  }
-
-  const handleDelete = (id) => {
-    dispatch(deleteContact(id))
   }
 
   return (
@@ -88,7 +65,7 @@ function App() {
           <ContactForm
             initialContact={editingContact}
             onSubmit={handleSubmit}
-            onCancel={() => setEditingContact(null)}
+            onCancel={() => dispatch(clearEditingContact())}
           />
         </div>
       </header>
@@ -113,11 +90,7 @@ function App() {
           {status === 'failed' && (
             <div className="error-banner">{error}</div>
           )}
-          <ContactList
-            contacts={filteredContacts}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+          <ContactList />
         </section>
       </main>
     </div>
